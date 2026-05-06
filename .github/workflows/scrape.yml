@@ -1,0 +1,53 @@
+# =====================================================================
+# Blake Amadeo Portfolio — Scraper Workflow
+#
+# This file lives at:   .github/workflows/scrape.yml
+# Inside a SEPARATE GitHub repository (NOT your portfolio site).
+#
+# It runs the scraper:
+#   - Every day at 6:00 AM Eastern Time (10:00 UTC during EST,
+#     11:00 UTC during EDT — we use 10:00 UTC for both, which means
+#     6 AM EST and 7 AM EDT. See README for adjusting.)
+#   - On every manual trigger (Actions tab → Run workflow)
+#
+# What you need to set up in the GitHub repo settings BEFORE running:
+#   Settings → Secrets and variables → Actions → New repository secret
+#     1. FIREBASE_SERVICE_ACCOUNT  (the entire JSON of your service account)
+#     2. FIREBASE_DB_URL           (https://blake-portfolio-af7ff-default-rtdb.firebaseio.com)
+#
+# README.md has the full step-by-step.
+# =====================================================================
+
+name: Daily Casting Scraper
+
+on:
+  schedule:
+    # 10:00 UTC daily = 6 AM EST / 7 AM EDT
+    - cron: '0 10 * * *'
+  workflow_dispatch:        # allows manual runs from the Actions tab
+
+permissions:
+  contents: read
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run scraper
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DB_URL:          ${{ secrets.FIREBASE_DB_URL }}
+        run: node scraper.js
